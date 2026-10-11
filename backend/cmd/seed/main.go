@@ -42,11 +42,16 @@ func run() error {
 	if err := pool.QueryRow(ctx, `SELECT count(*) FROM organizations`).Scan(&orgs); err != nil {
 		return err
 	}
-	if orgs > 0 {
-		return fmt.Errorf("database already has %d organizations; seed only runs on an empty database", orgs)
-	}
-
 	a := app.New(pool, cfg.SecretKey, cfg.SessionTTL, slog.Default())
+	if orgs > 0 {
+		// Already seeded: only top up the demo catalog, never touch real data.
+		n, err := seedExtras(ctx, a, pool)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("Database already has %d organizations; added %d demo medicines.\n", orgs, n)
+		return nil
+	}
 	adminEmail := cfg.AdminEmail
 	if adminEmail == "" {
 		adminEmail = "admin@meditrack.local"
@@ -307,6 +312,10 @@ func run() error {
 	// A pharmacy restocking from the importer.
 	if _, err := a.CreateOrder(ctx, ph2.actor, app.OrderInput{SellerID: imp.id, Note: "Weekly restock",
 		Items: []app.OrderItemInput{{ProductID: productIDs["Amoxil"], Quantity: 20}, {ProductID: productIDs["Coartem"], Quantity: 10}}}); err != nil {
+		return err
+	}
+
+	if _, err := seedExtras(ctx, a, pool); err != nil {
 		return err
 	}
 

@@ -8,7 +8,9 @@ import 'package:meditrack/api/api_client.dart';
 import 'package:meditrack/api/code.dart';
 import 'package:meditrack/api/models.dart';
 import 'package:meditrack/screens/home_screen.dart';
+import 'package:meditrack/screens/medicine_screen.dart';
 import 'package:meditrack/state/app_state.dart';
+import 'package:meditrack/widgets/medicine_art.dart';
 import 'package:meditrack/theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -279,6 +281,41 @@ void main() {
       expect(order.items.single.lineTotal, 70);
       expect(order.packs.single.code, 'ABCD-EFGH-JKMN');
       expect(orderStatusLook(order.status).$2, 'Collected');
+    });
+  });
+
+  group('find medicine', () {
+    Offer offer(String product, String seller, double price, double? km) =>
+        Offer.fromJson({
+          'seller': {'id': seller, 'name': seller},
+          'product': {'id': product, 'name': product, 'dosage_form': 'Tablet'},
+          'unit_price': price,
+          'available': 10,
+          'distance_km': km,
+        });
+
+    test('groups offers per medicine, nearest pharmacy and medicine first', () {
+      final groups = groupOffers([
+        offer('far-med', 'a', 10, 9),
+        offer('near-med', 'b', 30, 4),
+        offer('near-med', 'c', 20, 1.5),
+        offer('near-med', 'd', 15, null),
+      ]);
+      expect(groups.map((g) => g.product.id), ['near-med', 'far-med']);
+      expect(groups.first.offers.map((o) => o.seller.id), ['c', 'b', 'd']);
+      expect(groups.first.nearestKm, 1.5);
+      expect(groups.first.minPrice, 15);
+      expect(shortMoney(30, 'ETB'), 'ETB 30');
+    });
+
+    test('picks an illustration from the dosage form', () {
+      expect(medicineFormOf('Film-coated tablet'), MedicineForm.tablet);
+      expect(medicineFormOf('Eye drops'), MedicineForm.drops);
+      expect(medicineFormOf('Oral suspension'), MedicineForm.syrup);
+      expect(medicineFormOf('Ointment'), MedicineForm.cream);
+      expect(medicineFormOf('Ampoule'), MedicineForm.injection);
+      expect(medicineFormOf('Something new'), MedicineForm.other);
+      expect(medicinePalette('Panadol'), same(medicinePalette('Panadol')));
     });
   });
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:latlong2/latlong.dart' hide Path;
 
 import '../theme.dart';
 
@@ -117,4 +117,93 @@ class MapButton extends StatelessWidget {
       ),
     );
   }
+}
+
+/// A price tag pinned to a pharmacy. The selected one is dark and slightly larger.
+Marker priceMarker(
+  LatLng point,
+  String label, {
+  bool selected = false,
+  VoidCallback? onTap,
+}) {
+  return Marker(
+    point: point,
+    width: 104,
+    height: 46,
+    alignment: Alignment.topCenter,
+    child: GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: EdgeInsets.symmetric(
+              horizontal: selected ? 11 : 9,
+              vertical: selected ? 7 : 5,
+            ),
+            decoration: BoxDecoration(
+              color: selected ? AppColors.brandDeep : Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: selected ? AppColors.brandDeep : AppColors.line,
+              ),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x330F172A),
+                  blurRadius: 8,
+                  offset: Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.local_pharmacy_rounded,
+                  size: selected ? 14 : 12,
+                  color: selected ? AppColors.mint : AppColors.brand,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: selected ? 12.5 : 11.5,
+                    fontWeight: FontWeight.w700,
+                    color: selected ? Colors.white : AppColors.ink,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          CustomPaint(
+            size: const Size(12, 6),
+            painter: _TailPainter(
+              selected ? AppColors.brandDeep : Colors.white,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _TailPainter extends CustomPainter {
+  _TailPainter(this.color);
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.drawPath(
+      Path()
+        ..moveTo(0, 0)
+        ..lineTo(size.width, 0)
+        ..lineTo(size.width / 2, size.height)
+        ..close(),
+      Paint()..color = color,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_TailPainter old) => old.color != color;
 }
