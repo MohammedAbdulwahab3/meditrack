@@ -318,4 +318,16 @@ void main() {
       expect(medicinePalette('Panadol'), same(medicinePalette('Panadol')));
     });
   });
+
+  test('profile carries the forced password change flag', () {
+    final base = {'id': 'u1', 'email': 'a@b.c', 'role': 'patient'};
+    expect(UserProfile.fromJson(base).mustChangePassword, isFalse);
+    expect(
+      UserProfile.fromJson({
+        ...base,
+        'must_change_password': true,
+      }).mustChangePassword,
+      isTrue,
+    );
+  });
 }

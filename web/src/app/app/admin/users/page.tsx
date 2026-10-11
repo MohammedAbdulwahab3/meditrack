@@ -1,12 +1,12 @@
 "use client";
 
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Search, Users } from "lucide-react";
+import { Copy, KeyRound, Search, Users } from "lucide-react";
 import { useState } from "react";
 import { RoleGate } from "@/components/role-gate";
 import { StatusBadge } from "@/components/status";
 import { useToast } from "@/components/toast";
-import { Badge, Button, Card, EmptyState, ErrorNotice, Input, Loading, PageHeader, Pagination, Select, Table, Td, Th } from "@/components/ui";
+import { Badge, Button, Card, EmptyState, ErrorNotice, Input, Loading, Modal, Notice, PageHeader, Pagination, Select, Table, Td, Th } from "@/components/ui";
 import { api, type AdminUser, type Page } from "@/lib/api";
 import { formatDate, timeAgo } from "@/lib/format";
 import { useMe } from "@/lib/session";
@@ -31,6 +31,7 @@ export default function AdminUsersPage() {
     },
     onError: (e) => toast.error(e.message),
   });
+  const [resetting, setResetting] = useState<AdminUser | null>(null);
 
   return (
     <RoleGate roles={["admin"]}>
@@ -99,9 +100,14 @@ export default function AdminUsersPage() {
                     <div className="flex items-center justify-end gap-2">
                       {!u.is_active && <Badge tone="red">Deactivated</Badge>}
                       {u.id !== me?.user.id && (
-                        <Button size="sm" variant="secondary" loading={toggle.isPending && toggle.variables?.id === u.id} onClick={() => toggle.mutate(u)}>
-                          {u.is_active ? "Deactivate" : "Reactivate"}
-                        </Button>
+                        <>
+                          <Button size="sm" variant="ghost" onClick={() => setResetting(u)} title="Reset password">
+                            <KeyRound className="size-4" /> Reset password
+                          </Button>
+                          <Button size="sm" variant="secondary" loading={toggle.isPending && toggle.variables?.id === u.id} onClick={() => toggle.mutate(u)}>
+                            {u.is_active ? "Deactivate" : "Reactivate"}
+                          </Button>
+                        </>
                       )}
                     </div>
                   </Td>
@@ -112,6 +118,71 @@ export default function AdminUsersPage() {
         )}
         <Pagination page={users.data} onChange={setOffset} />
       </Card>
+      {resetting && <ResetPasswordDialog user={resetting} onClose={() => setResetting(null)} />}
     </RoleGate>
+  );
+}
+
+function ResetPasswordDialog({ user, onClose }: { user: AdminUser; onClose: () => void }) {
+  const toast = useToast();
+  const reset = useMutation({
+    mutationFn: () => api.post<{ temporary_password: string }>(`/admin/users/${user.id}/reset-password`),
+  });
+  const temp = reset.data?.temporary_password;
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={temp ? "Temporary password created" : `Reset password for ${user.full_name}?`}
+      footer={
+        temp ? (
+          <Button onClick={onClose}>Done</Button>
+        ) : (
+          <>
+            <Button variant="secondary" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button variant="danger" loading={reset.isPending} onClick={() => reset.mutate()}>
+              Reset password
+            </Button>
+          </>
+        )
+      }
+    >
+      {temp ? (
+        <div className="space-y-4 text-sm">
+          <p className="text-slate-600">
+            Give this to <span className="font-medium text-slate-900">{user.full_name}</span> ({user.email}) in person or by phone. It works
+            once: they must choose a new password when they sign in.
+          </p>
+          <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-900 px-4 py-3">
+            <code className="font-mono text-xl font-semibold tracking-widest text-white">{temp}</code>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() =>
+                navigator.clipboard
+                  .writeText(temp)
+                  .then(() => toast.success("Copied"))
+                  .catch(() => toast.error("Copy it by hand"))
+              }
+            >
+              <Copy className="size-4" /> Copy
+            </Button>
+          </div>
+          <Notice tone="amber">This password is shown only once. Close this window after you've passed it on.</Notice>
+        </div>
+      ) : (
+        <div className="space-y-3 text-sm text-slate-600">
+          <p>
+            {user.full_name} will be signed out on every device. You'll get a temporary password to give them; they choose a new one when they
+            sign in.
+          </p>
+          <p>Only do this after confirming who is asking, for example by calling the phone number on their account.</p>
+          {reset.error && <ErrorNotice error={reset.error} />}
+        </div>
+      )}
+    </Modal>
   );
 }

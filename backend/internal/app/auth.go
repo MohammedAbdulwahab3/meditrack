@@ -21,6 +21,8 @@ type UserView struct {
 	Role      string    `json:"role"`
 	IsActive  bool      `json:"is_active"`
 	CreatedAt time.Time `json:"created_at"`
+	// Set after an admin password reset; clients must ask for a new password first.
+	MustChangePassword bool `json:"must_change_password"`
 }
 
 type OrgView struct {
@@ -287,9 +289,9 @@ func (a *App) Authenticate(ctx context.Context, token string) (*Actor, error) {
 func (a *App) GetMe(ctx context.Context, userID string) (*Me, error) {
 	var me Me
 	var orgID *string
-	err := a.DB.QueryRow(ctx, `SELECT id, email, full_name, phone, role, is_active, created_at, organization_id
+	err := a.DB.QueryRow(ctx, `SELECT id, email, full_name, phone, role, is_active, created_at, organization_id, must_change_password
 		FROM users WHERE id = $1`, userID).Scan(&me.User.ID, &me.User.Email, &me.User.FullName, &me.User.Phone,
-		&me.User.Role, &me.User.IsActive, &me.User.CreatedAt, &orgID)
+		&me.User.Role, &me.User.IsActive, &me.User.CreatedAt, &orgID, &me.User.MustChangePassword)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, errNotFound("User")
 	}
@@ -343,16 +345,22 @@ func (a *App) ChangePassword(ctx context.Context, actor *Actor, currentToken str
 	if bcrypt.CompareHashAndPassword([]byte(hash), []byte(in.CurrentPassword)) != nil {
 		return errInvalid(map[string]string{"current_password": "Current password is incorrect."})
 	}
+	if in.NewPassword == in.CurrentPassword {
+		return errInvalid(map[string]string{"new_password": "Choose a password different from the current one."})
+	}
 	newHash, err := hashPassword(in.NewPassword)
 	if err != nil {
 		return err
 	}
 	return a.inTx(ctx, func(tx pgx.Tx) error {
-		if _, err := tx.Exec(ctx, `UPDATE users SET password_hash = $2, updated_at = now() WHERE id = $1`, actor.UserID, newHash); err != nil {
+		if _, err := tx.Exec(ctx, `UPDATE users SET password_hash = $2, must_change_password = false, updated_at = now() WHERE id = $1`,
+			actor.UserID, newHash); err != nil {
 			return err
 		}
-		_, err := tx.Exec(ctx, `DELETE FROM sessions WHERE user_id = $1 AND token_hash <> $2`, actor.UserID, hashToken(currentToken))
-		return err
+		if _, err := tx.Exec(ctx, `DELETE FROM sessions WHERE user_id = $1 AND token_hash <> $2`, actor.UserID, hashToken(currentToken)); err != nil {
+			return err
+		}
+		return a.audit(ctx, tx, actor, "user.password_changed", "user", actor.UserID, nil)
 	})
 }
 

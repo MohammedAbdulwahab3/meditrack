@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { AppShell } from "@/components/app-shell";
+import { ForcePasswordChange } from "@/components/force-password";
 import { ErrorNotice, Loading } from "@/components/ui";
 import { useMe } from "@/lib/session";
 
@@ -23,5 +24,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
   if (isPending || !me) return <Loading />;
+  if (me.user.must_change_password) return <ForcePasswordChange email={me.user.email} />;
   return <AppShell me={me}>{children}</AppShell>;
 }

@@ -125,6 +125,7 @@ func (s *Server) Handler() http.Handler {
 				r.Post("/organizations/{id}/status", h(s.adminOrgStatus))
 				r.Get("/users", h(s.adminUsers))
 				r.Post("/users/{id}/active", h(s.adminUserActive))
+				r.Post("/users/{id}/reset-password", h(s.adminResetPassword))
 				r.Get("/reports", h(s.adminReports))
 				r.Put("/reports/{id}", h(s.adminUpdateReport))
 				r.Get("/audit", h(s.adminAudit))

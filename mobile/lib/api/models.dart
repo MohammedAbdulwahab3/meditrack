@@ -191,12 +191,16 @@ class Report {
 
 class UserProfile {
   final String id, email, fullName, phone, role;
+
+  /// Set after an admin password reset: the user must choose a new password first.
+  final bool mustChangePassword;
   const UserProfile({
     required this.id,
     required this.email,
     required this.fullName,
     required this.phone,
     required this.role,
+    this.mustChangePassword = false,
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> j) => UserProfile(
@@ -205,6 +209,7 @@ class UserProfile {
     fullName: j['full_name'] ?? '',
     phone: j['phone'] ?? '',
     role: j['role'] ?? '',
+    mustChangePassword: j['must_change_password'] == true,
   );
 }
 

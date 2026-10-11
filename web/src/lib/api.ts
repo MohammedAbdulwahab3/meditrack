@@ -81,6 +81,7 @@ export interface User {
   role: Role;
   is_active: boolean;
   created_at: string;
+  must_change_password?: boolean;
 }
 
 export interface Organization {

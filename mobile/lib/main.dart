@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'screens/account_screen.dart';
+import 'screens/change_password_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/nearby_screen.dart';
 import 'screens/orders_screen.dart';
@@ -72,6 +73,10 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
+    // After an admin password reset nothing else is reachable until a new password is set.
+    if (AppScope.of(context).user?.mustChangePassword == true) {
+      return const ChangePasswordScreen(forced: true);
+    }
     return HomeTabs(
       goTo: (i) => setState(() => _tab = i),
       child: Scaffold(

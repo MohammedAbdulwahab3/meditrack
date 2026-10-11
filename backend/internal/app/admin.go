@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"time"
@@ -277,6 +278,76 @@ func (a *App) AdminSetUserActive(ctx context.Context, actor *Actor, id string, i
 		}
 		return a.audit(ctx, tx, actor, "user.active_changed", "user", id, map[string]any{"active": in.Active})
 	})
+}
+
+// TemporaryPassword is shown once to the admin, who passes it to the user.
+type TemporaryPassword struct {
+	Password string `json:"temporary_password"`
+}
+
+// tempAlphabet avoids look-alike characters (0/O, 1/I/L) so the password is easy to read out.
+const tempAlphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
+
+func newTemporaryPassword() (string, error) {
+	// Rejection sampling keeps every character equally likely.
+	limit := byte(256 - 256%len(tempAlphabet))
+	out := make([]byte, 0, 14)
+	buf := make([]byte, 32)
+	for n := 0; n < 12; {
+		if _, err := rand.Read(buf); err != nil {
+			return "", err
+		}
+		for _, c := range buf {
+			if c >= limit || n == 12 {
+				continue
+			}
+			if n > 0 && n%4 == 0 {
+				out = append(out, '-')
+			}
+			out = append(out, tempAlphabet[int(c)%len(tempAlphabet)])
+			n++
+		}
+	}
+	return string(out), nil
+}
+
+// AdminResetPassword replaces a user's password with a one-time temporary one, signs them out
+// everywhere and makes them choose a new password at next sign-in.
+func (a *App) AdminResetPassword(ctx context.Context, actor *Actor, id string) (*TemporaryPassword, error) {
+	if err := requireRole(actor, RoleAdmin); err != nil {
+		return nil, err
+	}
+	if !IsUUID(id) {
+		return nil, errNotFound("User")
+	}
+	if id == actor.UserID {
+		return nil, errConflict("Use Change password for your own account.")
+	}
+	temp, err := newTemporaryPassword()
+	if err != nil {
+		return nil, err
+	}
+	hash, err := hashPassword(temp)
+	if err != nil {
+		return nil, err
+	}
+	err = a.inTx(ctx, func(tx pgx.Tx) error {
+		tag, err := tx.Exec(ctx, `UPDATE users SET password_hash = $2, must_change_password = true, updated_at = now() WHERE id = $1`, id, hash)
+		if err != nil {
+			return err
+		}
+		if tag.RowsAffected() == 0 {
+			return errNotFound("User")
+		}
+		if _, err := tx.Exec(ctx, `DELETE FROM sessions WHERE user_id = $1`, id); err != nil {
+			return err
+		}
+		return a.audit(ctx, tx, actor, "user.password_reset", "user", id, nil)
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &TemporaryPassword{Password: temp}, nil
 }
 
 // ---- Counterfeit reports ----

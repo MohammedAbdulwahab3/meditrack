@@ -104,6 +104,9 @@ class ApiClient {
   Future<dynamic> _post(String path, Object body) => _send(
     () => _http.post(_uri(path), headers: _headers, body: jsonEncode(body)),
   );
+  Future<dynamic> _put(String path, Object body) => _send(
+    () => _http.put(_uri(path), headers: _headers, body: jsonEncode(body)),
+  );
 
   // ---- Public ----
 
@@ -160,6 +163,12 @@ class ApiClient {
   }
 
   Future<void> logout() => _post('/auth/logout', {});
+
+  /// Changes the password; other devices are signed out.
+  Future<void> changePassword(String current, String next) => _put(
+    '/auth/password',
+    {'current_password': current, 'new_password': next},
+  );
 
   Future<List<ScanRecord>> myScans() async {
     final body =

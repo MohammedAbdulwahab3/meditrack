@@ -346,6 +346,10 @@ func (s *Server) adminUserActive(w http.ResponseWriter, r *http.Request) (int, a
 	return http.StatusNoContent, nil, nil
 }
 
+func (s *Server) adminResetPassword(w http.ResponseWriter, r *http.Request) (int, any, error) {
+	return result(s.app.AdminResetPassword(r.Context(), actorFrom(r), chi.URLParam(r, "id")))
+}
+
 func (s *Server) adminReports(w http.ResponseWriter, r *http.Request) (int, any, error) {
 	return result(s.app.AdminListReports(r.Context(), actorFrom(r), app.ReportFilter{
 		PageParams: pageParams(r), Status: r.URL.Query().Get("status"),

@@ -4,6 +4,7 @@ import '../api/api_client.dart';
 import '../api/models.dart';
 import '../state/app_state.dart';
 import '../widgets/common.dart';
+import 'change_password_screen.dart';
 import 'history_screen.dart';
 import 'report_screen.dart';
 
@@ -394,6 +395,15 @@ class _Menu extends StatelessWidget {
               'My orders',
               'Reservations and pickups',
               () => HomeTabs.maybeOf(context)?.goTo(HomeTabs.orders),
+            ),
+            const Divider(indent: 70),
+            tile(
+              Icons.lock_reset_rounded,
+              'Change password',
+              'Other devices will be signed out',
+              () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ChangePasswordScreen()),
+              ),
             ),
             const Divider(indent: 70),
           ],

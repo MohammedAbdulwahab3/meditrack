@@ -131,6 +131,12 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> changePassword(String current, String next) async {
+    await api.changePassword(current, next);
+    user = await api.me();
+    notifyListeners();
+  }
+
   Future<void> signOut() async {
     try {
       await api.logout();

@@ -160,6 +160,7 @@ The web app reads `API_URL` (dev proxy target, **at build time**) and `NEXT_PUBL
 
 - **Billing.** Plans and trial dates exist; Chapa checkout and subscription enforcement are next.
 - **Email/SMS delivery of notifications.** Today they are in-app only.
-- **Password reset and email verification.**
+- **Self-service password reset by email, and email verification.** Today an admin issues a one-time
+  temporary password from Admin → Users, and the user must pick a new one at next sign-in.
 - **Amharic translation and offline scan queueing** for low-connectivity pharmacies.
 - **Mobile app for pharmacy staff.** The patient app is in `mobile/`. Pharmacies use the web dashboard, which works on phones.
