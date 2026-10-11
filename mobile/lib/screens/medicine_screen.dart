@@ -290,6 +290,7 @@ class _MedicineScreenState extends State<MedicineScreen> {
                 : FlutterMap(
                     mapController: _map,
                     options: MapOptions(
+                      backgroundColor: mapBackground,
                       initialCenter: start,
                       initialZoom: 13,
                       onMapReady: () {
@@ -456,11 +457,18 @@ class _MedicineScreenState extends State<MedicineScreen> {
                   Row(
                     children: [
                       Expanded(
-                        child: Text(
-                          _offers.length == 1
-                              ? 'Available at 1 pharmacy'
-                              : 'Available at ${_offers.length} pharmacies',
-                          style: Theme.of(context).textTheme.titleMedium,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Pharmacies',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            Text(
+                              '${_offers.length} have it in stock',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
                         ),
                       ),
                       SegmentedButton<_Sort>(
@@ -551,7 +559,7 @@ class _ProductHeader extends StatelessWidget {
             tag: 'medicine-art-${p.id}',
             child: MedicineArt(
               dosageForm: p.dosageForm,
-              seed: p.name,
+              seed: p.name + p.genericName,
               borderRadius: 20,
             ),
           ),
@@ -710,34 +718,33 @@ class _SelectedPharmacy extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 14),
+          FilledButton.icon(
+            onPressed: onReserve,
+            icon: const Icon(Icons.shopping_bag_outlined),
+            label: const Text('Reserve for pickup'),
+          ),
+          const SizedBox(height: 10),
           Row(
             children: [
               Expanded(
-                child: FilledButton.icon(
-                  onPressed: onReserve,
-                  icon: const Icon(Icons.shopping_bag_outlined),
-                  label: const Text('Reserve'),
+                child: OutlinedButton.icon(
+                  onPressed: onDirections,
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                  ),
+                  icon: const Icon(Icons.navigation_rounded, size: 20),
+                  label: const FittedBox(child: Text('Start navigation')),
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: onDirections,
-                  icon: const Icon(Icons.directions_rounded),
-                  label: const Text('Go'),
-                ),
-              ),
-              const SizedBox(width: 10),
-              SizedBox(
-                width: 52,
-                height: 52,
-                child: OutlinedButton(
                   onPressed: onCall,
                   style: OutlinedButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: const Size(52, 52),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
                   ),
-                  child: const Icon(Icons.call_rounded),
+                  icon: const Icon(Icons.call_rounded, size: 20),
+                  label: const Text('Call'),
                 ),
               ),
             ],

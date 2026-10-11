@@ -291,7 +291,7 @@ class MedicineCard extends StatelessWidget {
                         tag: 'medicine-art-${p.id}',
                         child: MedicineArt(
                           dosageForm: p.dosageForm,
-                          seed: p.name,
+                          seed: p.name + p.genericName,
                           borderRadius: 16,
                         ),
                       ),
@@ -342,27 +342,37 @@ class MedicineCard extends StatelessWidget {
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          Icon(
-                            group.nearestKm != null
-                                ? Icons.near_me_rounded
-                                : Icons.local_pharmacy_outlined,
-                            size: 13,
-                            color: AppColors.brand,
-                          ),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              [
-                                if (group.nearestKm != null)
-                                  formatDistance(group.nearestKm),
-                                '${group.offers.length} '
-                                    '${group.offers.length == 1 ? 'pharmacy' : 'pharmacies'}',
-                              ].join(' · '),
+                          if (group.nearestKm != null) ...[
+                            const Icon(
+                              Icons.near_me_rounded,
+                              size: 13,
+                              color: AppColors.brand,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              formatDistance(group.nearestKm),
                               style: theme.textTheme.labelMedium?.copyWith(
                                 color: AppColors.brandDark,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                          const Spacer(),
+                          Tooltip(
+                            message:
+                                '${group.offers.length} pharmacies have it',
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.storefront_rounded,
+                                  size: 14,
+                                  color: AppColors.muted,
+                                ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  '${group.offers.length}',
+                                  style: theme.textTheme.labelMedium,
+                                ),
+                              ],
                             ),
                           ),
                         ],

@@ -370,6 +370,7 @@ class _PharmacyMapState extends State<_PharmacyMap> {
         FlutterMap(
           mapController: _map,
           options: MapOptions(
+            backgroundColor: mapBackground,
             initialCenter: center,
             initialZoom: 13,
             initialCameraFit: _initialFit(),

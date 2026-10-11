@@ -4,22 +4,27 @@ import 'package:latlong2/latlong.dart' hide Path;
 
 import '../theme.dart';
 
-/// Clean, light basemap (CARTO Voyager on OpenStreetMap data) with the required attribution.
+/// Shown behind tiles while they load (the basemap's land colour), instead of flat grey.
+const mapBackground = Color(0xFFF4F1E8);
+
+/// Esri's World Street Map: clear street names, no API key, and (unlike the volunteer-run
+/// OpenStreetMap tile servers) tolerant of app traffic. Note the {y}/{x} order.
+const tileUrl =
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
+
 List<Widget> baseMapLayers(BuildContext context) => [
   TileLayer(
-    urlTemplate:
-        'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    subdomains: const ['a', 'b', 'c', 'd'],
-    retinaMode: RetinaMode.isHighDensity(context),
+    urlTemplate: tileUrl,
     userAgentPackageName: 'com.meditrack.meditrack',
+    maxNativeZoom: 19,
     maxZoom: 20,
   ),
 ];
 
 Widget mapAttribution() => const SimpleAttributionWidget(
   source: Text(
-    '© OpenStreetMap contributors © CARTO',
-    style: TextStyle(fontSize: 10),
+    'Tiles © Esri · HERE, Garmin, © OpenStreetMap contributors',
+    style: TextStyle(fontSize: 9.5),
   ),
   backgroundColor: Color(0xCCFFFFFF),
 );

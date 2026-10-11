@@ -10,6 +10,7 @@ import '../services/routing.dart';
 import '../state/app_state.dart';
 import '../widgets/common.dart';
 import '../widgets/map.dart';
+import '../widgets/medicine_art.dart';
 import 'reserve_sheet.dart';
 
 /// A pharmacy: where it is, the route from you, and what it has in stock.
@@ -112,6 +113,7 @@ class _PharmacyScreenState extends State<PharmacyScreen> {
                 : FlutterMap(
                     mapController: _map,
                     options: MapOptions(
+                      backgroundColor: mapBackground,
                       initialCenter: dest,
                       initialZoom: 15,
                       onMapReady: () {
@@ -383,6 +385,16 @@ class _StockRow extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 10, 12, 10),
       child: Row(
         children: [
+          SizedBox(
+            width: 56,
+            height: 56,
+            child: MedicineArt(
+              dosageForm: o.product.dosageForm,
+              seed: o.product.name + o.product.genericName,
+              borderRadius: 14,
+            ),
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
