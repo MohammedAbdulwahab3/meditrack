@@ -1,5 +1,6 @@
 "use client";
 
+import { MedicineArt, artSeed } from "@/components/medicine-art";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, ExternalLink, PackageCheck, Truck, X } from "lucide-react";
 import Link from "next/link";
@@ -161,13 +162,18 @@ export default function OrderDetailPage() {
               {o.items.map((i) => (
                 <tr key={i.product_id}>
                   <Td>
-                    <p className="font-medium text-slate-900">
-                      {i.name} {i.strength}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      {i.dosage_form}
-                      {i.requires_prescription && " · Prescription"}
-                    </p>
+                    <div className="flex items-center gap-3">
+                      <MedicineArt dosageForm={i.dosage_form} seed={artSeed(i)} className="size-11 shrink-0" rounded="rounded-xl" />
+                      <div>
+                        <p className="font-medium text-slate-900">
+                          {i.name} {i.strength}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {i.dosage_form}
+                          {i.requires_prescription && " · Prescription"}
+                        </p>
+                      </div>
+                    </div>
                   </Td>
                   <Td className="text-right tabular-nums">{i.quantity}</Td>
                   <Td className="text-right tabular-nums">{formatMoney(i.unit_price, o.currency)}</Td>

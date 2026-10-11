@@ -1,5 +1,6 @@
 "use client";
 
+import { MedicineArt, artSeed } from "@/components/medicine-art";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { ClipboardList, Pill, ShoppingCart } from "lucide-react";
 import Link from "next/link";
@@ -135,8 +136,13 @@ function OrdersView() {
                     <p className="text-slate-900">{counterparty(o).name}</p>
                     <p className="text-xs text-slate-500">{counterparty(o).city || counterparty(o).phone}</p>
                   </Td>
-                  <Td className="max-w-64 truncate">
-                    {o.items.map((i) => `${i.quantity}× ${i.name} ${i.strength}`).join(", ")}
+                  <Td className="max-w-72">
+                    <div className="flex items-center gap-2.5">
+                      {o.items[0] && (
+                        <MedicineArt dosageForm={o.items[0].dosage_form} seed={artSeed(o.items[0])} className="size-9 shrink-0" rounded="rounded-lg" />
+                      )}
+                      <span className="truncate">{o.items.map((i) => `${i.quantity}× ${i.name} ${i.strength}`).join(", ")}</span>
+                    </div>
                   </Td>
                   <Td className="text-right font-medium tabular-nums">{formatMoney(o.total, o.currency)}</Td>
                   <Td>{timeAgo(o.created_at)}</Td>

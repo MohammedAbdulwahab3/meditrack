@@ -445,6 +445,7 @@ export interface Order {
   items: {
     product_id: string;
     name: string;
+    generic_name: string;
     strength: string;
     dosage_form: string;
     requires_prescription: boolean;
