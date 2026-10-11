@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --color-brand-50: #effcf9;
+  --color-brand-100: #c9f5ec;
+  --color-brand-200: #94eadb;
+  --color-brand-300: #57d7c4;
+  --color-brand-400: #2abba9;
+  --color-brand-500: #129e8f;
+  --color-brand-600: #0b7f75;
+  --color-brand-700: #0d655f;
+  --color-brand-800: #10514d;
+  --color-brand-900: #124341;
+  --color-brand-950: #03292a;
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 antialiased;
+}
+
+/* Printable QR label sheets */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white;
+  }
+  @page {
+    margin: 10mm;
+  }
+}

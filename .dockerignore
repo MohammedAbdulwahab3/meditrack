@@ -1,0 +1,6 @@
+.git
+.env
+mobile
+**/node_modules
+**/.next
+web/tsconfig.tsbuildinfo

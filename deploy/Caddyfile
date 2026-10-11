@@ -1,0 +1,22 @@
+# Set SITE_ADDRESS to your domain (e.g. meditrack.example.com) for automatic HTTPS,
+# or leave the default ":80" for plain HTTP on a local machine.
+{$SITE_ADDRESS::80} {
+	encode zstd gzip
+
+	# API goes straight to Go; Caddy sets X-Forwarded-For to the real client IP.
+	handle /api/* {
+		reverse_proxy api:8090
+	}
+
+	handle {
+		reverse_proxy web:3000
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(self), microphone=(), geolocation=(self)"
+		-Server
+	}
+}
