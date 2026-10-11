@@ -126,6 +126,20 @@ The integration test drives the whole supply chain over HTTP. It covers:
 - CSRF protection, tenant isolation, and admin oversight.
 - Concurrent shipments never overselling stock.
 
+## Deploy on Render
+
+`render.yaml` describes the production setup: one Docker web service built from
+`deploy/render/Dockerfile` (the Go API and the Next.js site in one container; Next serves
+Render's `$PORT` and proxies `/api` to the API on `127.0.0.1:8090`) plus a Postgres database.
+Pushes to `main` redeploy automatically.
+
+- Live: https://meditrack-ekb9.onrender.com (region Frankfurt)
+- `SEED_DEMO=true` loads the demo organizations on first boot; set it to `false` and change
+  the demo passwords before real use.
+- Free plan: the service sleeps after 15 idle minutes (the next request takes about a minute),
+  and the free database expires 30 days after creation unless upgraded.
+- Phone app: `flutter build apk --release --dart-define=API_URL=https://meditrack-ekb9.onrender.com`
+
 ## Configuration (API)
 
 | Variable | Default | Notes |
@@ -136,6 +150,7 @@ The integration test drives the whole supply chain over HTTP. It covers:
 | `SECRET_KEY` | dev value | HMAC key used to anonymise scanner IPs |
 | `COOKIE_SECURE` | `true` in production | Set `false` only for plain-HTTP local runs |
 | `TRUST_PROXY` | `false` | Read the client IP from `X-Forwarded-For`. Enable only behind Caddy or another proxy you control. |
+| `CLIENT_IP_HEADER` | – | With `TRUST_PROXY`, a header the edge always overwrites with the client IP (Render: `CF-Connecting-IP`) |
 | `SESSION_TTL_HOURS` | `168` | |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME` | – | Creates the first admin if none exists |
 
