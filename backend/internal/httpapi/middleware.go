@@ -2,12 +2,14 @@ package httpapi
 
 import (
 	"context"
+	"log/slog"
 	"net"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/go-chi/chi/v5/middleware"
 	"golang.org/x/time/rate"
 
 	"github.com/meditrack/backend/internal/app"
@@ -71,6 +73,22 @@ func requireAuth(next http.Handler) http.Handler {
 			return
 		}
 		next.ServeHTTP(w, r)
+	})
+}
+
+// accessLog writes one structured line per request, with the client IP as the rate limiter
+// sees it (so proxy settings can be checked from the logs).
+func (s *Server) accessLog(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
+		next.ServeHTTP(ww, r)
+		status := ww.Status()
+		if status == 0 {
+			status = http.StatusOK
+		}
+		slog.Info("http", "method", r.Method, "path", r.URL.Path, "status", status, "bytes", ww.BytesWritten(),
+			"ms", time.Since(start).Milliseconds(), "ip", s.clientIP(r), "req", middleware.GetReqID(r.Context()))
 	})
 }
 

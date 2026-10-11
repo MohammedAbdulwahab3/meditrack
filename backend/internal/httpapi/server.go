@@ -43,7 +43,7 @@ func New(a *app.App, opts Options) *Server {
 func (s *Server) Handler() http.Handler {
 	r := chi.NewRouter()
 	// No middleware.RealIP: forwarded headers are only trusted via Options.TrustProxy (see clientIP).
-	r.Use(middleware.RequestID, middleware.Logger, middleware.Recoverer)
+	r.Use(middleware.RequestID, s.accessLog, middleware.Recoverer)
 	r.Use(middleware.Timeout(30 * time.Second))
 	r.Use(securityHeaders)
 
