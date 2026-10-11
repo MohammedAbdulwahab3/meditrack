@@ -26,6 +26,7 @@ type OrderParty struct {
 type OrderItem struct {
 	ProductID            string  `json:"product_id"`
 	Name                 string  `json:"name"`
+	GenericName          string  `json:"generic_name"`
 	Strength             string  `json:"strength"`
 	DosageForm           string  `json:"dosage_form"`
 	RequiresPrescription bool    `json:"requires_prescription"`
@@ -251,14 +252,14 @@ func (a *App) GetOrder(ctx context.Context, actor *Actor, id string) (*Order, er
 }
 
 func (a *App) loadOrderDetails(ctx context.Context, o *Order) error {
-	rows, err := a.DB.Query(ctx, `SELECT p.id, p.name, p.strength, p.dosage_form, p.requires_prescription, oi.quantity, oi.unit_price::float8
+	rows, err := a.DB.Query(ctx, `SELECT p.id, p.name, p.generic_name, p.strength, p.dosage_form, p.requires_prescription, oi.quantity, oi.unit_price::float8
 		FROM order_items oi JOIN products p ON p.id = oi.product_id WHERE oi.order_id = $1 ORDER BY p.name`, o.ID)
 	if err != nil {
 		return err
 	}
 	o.Items, err = pgx.CollectRows(rows, func(r pgx.CollectableRow) (OrderItem, error) {
 		var it OrderItem
-		err := r.Scan(&it.ProductID, &it.Name, &it.Strength, &it.DosageForm, &it.RequiresPrescription, &it.Quantity, &it.UnitPrice)
+		err := r.Scan(&it.ProductID, &it.Name, &it.GenericName, &it.Strength, &it.DosageForm, &it.RequiresPrescription, &it.Quantity, &it.UnitPrice)
 		it.LineTotal = math.Round(it.UnitPrice*float64(it.Quantity)*100) / 100
 		if it.RequiresPrescription {
 			o.RequiresPrescription = true

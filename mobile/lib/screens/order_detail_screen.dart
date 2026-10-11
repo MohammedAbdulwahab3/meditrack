@@ -7,6 +7,7 @@ import '../api/code.dart';
 import '../api/models.dart';
 import '../state/app_state.dart';
 import '../widgets/common.dart';
+import '../widgets/medicine_art.dart';
 import 'result_screen.dart';
 
 class OrderDetailScreen extends StatefulWidget {
@@ -201,12 +202,33 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                       const Divider(height: 24),
                       for (final it in o.items)
                         Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.only(bottom: 10),
                           child: Row(
                             children: [
+                              SizedBox(
+                                width: 48,
+                                height: 48,
+                                child: MedicineArt(
+                                  dosageForm: it.dosageForm,
+                                  seed: it.name + it.genericName,
+                                  borderRadius: 12,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
                               Expanded(
-                                child: Text(
-                                  '${it.quantity}× ${it.name} ${it.strength}',
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '${it.name} ${it.strength}',
+                                      style: theme.textTheme.titleSmall,
+                                    ),
+                                    Text(
+                                      '${it.quantity} × ${formatMoney(it.unitPrice, o.currency)}'
+                                      '${it.requiresPrescription ? ' · prescription' : ''}',
+                                      style: theme.textTheme.bodySmall,
+                                    ),
+                                  ],
                                 ),
                               ),
                               Text(

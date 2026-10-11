@@ -4,6 +4,7 @@ import '../api/api_client.dart';
 import '../api/models.dart';
 import '../state/app_state.dart';
 import '../widgets/common.dart';
+import '../widgets/medicine_art.dart';
 import 'order_detail_screen.dart';
 
 /// Opens the reserve flow for an offer, or a sign-in prompt for guests.
@@ -130,7 +131,15 @@ class _ReserveSheetState extends State<_ReserveSheet> {
             ),
             child: Row(
               children: [
-                const IconTile(Icons.medication_rounded, size: 44),
+                SizedBox(
+                  width: 56,
+                  height: 56,
+                  child: MedicineArt(
+                    dosageForm: o.product.dosageForm,
+                    seed: o.product.name + o.product.genericName,
+                    borderRadius: 14,
+                  ),
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(

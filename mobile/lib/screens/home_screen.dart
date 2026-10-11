@@ -5,7 +5,9 @@ import '../api/models.dart';
 import '../services/location.dart';
 import '../state/app_state.dart';
 import '../widgets/common.dart';
+import '../widgets/medicine_art.dart';
 import 'history_screen.dart';
+import 'medicine_screen.dart';
 import 'medicine_search_screen.dart';
 import 'pharmacy_screen.dart';
 import 'report_screen.dart';
@@ -22,12 +24,28 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final _location = LocationService.instance;
   Future<List<Pharmacy>>? _nearby;
+  Future<List<Offer>>? _medicines;
+  bool _medicinesNear = false;
 
   @override
   void initState() {
     super.initState();
     _location.addListener(_onLocation);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _location.locate());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadMedicines();
+      _location.locate();
+    });
+  }
+
+  void _loadMedicines() {
+    final p = _location.position;
+    _medicinesNear = p != null;
+    setState(() {
+      // The strip shows failures itself; never let one surface as an unhandled error.
+      _medicines = AppScope.read(
+        context,
+      ).api.offers(lat: p?.latitude, lng: p?.longitude)..ignore();
+    });
   }
 
   @override
@@ -39,6 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _onLocation() {
     if (!mounted) return;
     final p = _location.position;
+    if (p != null && !_medicinesNear) _loadMedicines();
     if (p != null && _nearby == null) {
       setState(() {
         _nearby = AppScope.read(
@@ -242,6 +261,19 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
 
+                // ---- Medicines ----
+                const SizedBox(height: 28),
+                SectionHeader(
+                  _medicinesNear ? 'Medicines near you' : 'Medicines in stock',
+                  action: 'See all',
+                  onAction: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const MedicineSearchScreen(),
+                    ),
+                  ),
+                ),
+                _MedicineStrip(future: _medicines),
+
                 // ---- Nearby pharmacies ----
                 const SizedBox(height: 28),
                 SectionHeader(
@@ -354,6 +386,104 @@ class _QuickAction extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _MedicineStrip extends StatelessWidget {
+  const _MedicineStrip({required this.future});
+  final Future<List<Offer>>? future;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return FutureBuilder<List<Offer>>(
+      future: future,
+      builder: (context, snap) {
+        if (snap.connectionState != ConnectionState.done) {
+          return const SizedBox(
+            height: 196,
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (snap.hasError) {
+          return const AppCard(
+            child: Text("Couldn't load medicines right now."),
+          );
+        }
+        final groups = groupOffers(snap.data!).take(10).toList();
+        if (groups.isEmpty) {
+          return const AppCard(child: Text('No medicines listed yet.'));
+        }
+        return SizedBox(
+          height: 196 * MediaQuery.textScalerOf(context).scale(1).clamp(1, 1.1),
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            clipBehavior: Clip.none,
+            itemCount: groups.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (context, i) {
+              final g = groups[i];
+              final p = g.product;
+              return SizedBox(
+                width: 148,
+                child: AppCard(
+                  padding: const EdgeInsets.all(8),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => MedicineScreen(group: g)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        height: 104,
+                        width: double.infinity,
+                        child: Hero(
+                          tag: 'medicine-art-${p.id}',
+                          child: MedicineArt(
+                            dosageForm: p.dosageForm,
+                            seed: p.name + p.genericName,
+                            borderRadius: 14,
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              p.name,
+                              style: theme.textTheme.titleSmall,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              p.strength,
+                              style: theme.textTheme.bodySmall,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'from ${shortMoney(g.minPrice, g.currency)}',
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: AppColors.brandDark,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }

@@ -4,6 +4,7 @@ import '../api/api_client.dart';
 import '../api/models.dart';
 import '../state/app_state.dart';
 import '../widgets/common.dart';
+import '../widgets/medicine_art.dart';
 import 'order_detail_screen.dart';
 
 /// The patient's pickup reservations.
@@ -104,8 +105,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
                     separatorBuilder: (_, __) => const SizedBox(height: 12),
                     itemBuilder: (context, i) {
                       final o = orders[i];
-                      return AppCard(
-                        padding: const EdgeInsets.all(16),
+                      return OrderCard(
+                        order: o,
                         onTap: () async {
                           await Navigator.of(context).push(
                             MaterialPageRoute(
@@ -114,76 +115,139 @@ class _OrdersScreenState extends State<OrdersScreen> {
                           );
                           if (mounted) _refresh();
                         },
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                const IconTile(
-                                  Icons.storefront_rounded,
-                                  size: 40,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        o.pharmacy.name,
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.titleSmall,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      Text(
-                                        '${o.reference} · ${o.createdAt == null ? '' : timeAgo(o.createdAt!)}',
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.bodySmall,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                OrderStatusChip(o.status),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            const Divider(),
-                            const SizedBox(height: 10),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    o.items
-                                        .map(
-                                          (it) =>
-                                              '${it.quantity}× ${it.name} ${it.strength}',
-                                        )
-                                        .join(', '),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.bodyMedium,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Text(
-                                  formatMoney(o.total, o.currency),
-                                  style: Theme.of(context).textTheme.titleSmall,
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
                       );
                     },
                   );
                 },
               ),
             ),
+    );
+  }
+}
+
+/// A reservation at a glance: what, where, status and total.
+class OrderCard extends StatelessWidget {
+  const OrderCard({super.key, required this.order, required this.onTap});
+  final Order order;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final o = order;
+    final first = o.items.isEmpty ? null : o.items.first;
+    final more = o.items.length - 1;
+    return AppCard(
+      padding: const EdgeInsets.all(14),
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 64,
+                height: 64,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    first == null
+                        ? const IconTile(Icons.medication_rounded, size: 64)
+                        : MedicineArt(
+                            dosageForm: first.dosageForm,
+                            seed: first.name + first.genericName,
+                            borderRadius: 16,
+                          ),
+                    if (more > 0)
+                      Positioned(
+                        right: 4,
+                        bottom: 4,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.ink,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            '+$more',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      o.items
+                          .map((it) => '${it.name} ${it.strength}')
+                          .join(', '),
+                      style: theme.textTheme.titleSmall,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 3),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.storefront_rounded,
+                          size: 14,
+                          color: AppColors.muted,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            o.pharmacy.name,
+                            style: theme.textTheme.bodySmall,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    OrderStatusChip(o.status),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Divider(),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  [
+                    o.reference,
+                    if (o.createdAt != null) timeAgo(o.createdAt!),
+                  ].join(' · '),
+                  style: theme.textTheme.bodySmall,
+                ),
+              ),
+              Text(
+                formatMoney(o.total, o.currency),
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

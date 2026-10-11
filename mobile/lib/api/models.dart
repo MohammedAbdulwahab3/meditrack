@@ -298,13 +298,14 @@ class Offer {
 }
 
 class OrderItem {
-  final String productId, name, strength, dosageForm;
+  final String productId, name, genericName, strength, dosageForm;
   final bool requiresPrescription;
   final int quantity;
   final double unitPrice, lineTotal;
   const OrderItem({
     required this.productId,
     required this.name,
+    this.genericName = '',
     required this.strength,
     required this.dosageForm,
     required this.requiresPrescription,
@@ -316,6 +317,7 @@ class OrderItem {
   factory OrderItem.fromJson(Map<String, dynamic> j) => OrderItem(
     productId: j['product_id'] ?? '',
     name: j['name'] ?? '',
+    genericName: j['generic_name'] ?? '',
     strength: j['strength'] ?? '',
     dosageForm: j['dosage_form'] ?? '',
     requiresPrescription: j['requires_prescription'] == true,
